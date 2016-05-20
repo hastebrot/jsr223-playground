@@ -4,6 +4,7 @@ import com.winterbe.expekt.expect
 import groovy.lang.GroovyObject
 import groovy.lang.GroovyShell
 import io.damo.kspec.Spec
+import io.damo.kspec.expectException
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -43,5 +44,33 @@ class GroovyScriptSpec : Spec({
         val newLine = String.format("%n")
         expect(outputStream.toString()).to.equal("foo" + newLine)
     }
+
+    test("script arguments") {
+        // when:
+        val resultMain = shell!!.run(File(fixturesPath, "ScriptArgs.groovy"), emptyArray())
+
+        // then:
+        expect(resultMain).to.equal(null)
+
+        // when:
+        val cls = shell!!.classLoader.parseClass(File(fixturesPath, "ScriptArgs.groovy"))
+        val resultObject = cls.declaredConstructors.first()
+                .newInstance(mapOf("foo" to "inky", "invalid" to "blinky")) as GroovyObject
+
+        // then:
+        expect(resultObject.getProperty("foo")).to.equal("inky")
+        expect(resultObject.getProperty("bar")).to.equal(null)
+    }
+
+    test("script exception") {
+        // expect:
+        expectException(RuntimeException::class, "script" ){
+            shell!!.run(File(fixturesPath, "ScriptException.groovy"), emptyArray())
+        }
+    }
+
+    test("script junit") { }
+
+    test("script spock") { }
 
 })
